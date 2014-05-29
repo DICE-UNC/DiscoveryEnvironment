@@ -104,7 +104,8 @@ project(':ui-commons-module') {
         compile "com.google.guava:guava-gwt:$guavaGwtVer"
         compile 'com.google.code.findbugs:jsr305:1.3.9'
         compile project(':ui-resources-module'),
-                project(':de-common-module')
+                project(':de-common-module'),
+                project(':gwt-taglist')
 
         testCompile "com.google.gwt.gwtmockito:gwtmockito:$gwtMockitoVer"
         testCompile project(':de-common-module').sourceSets.test.output
@@ -169,4 +170,13 @@ project(':clavin-java') {
         testCompile "junit:junit:$jUnitVersion"
     }
 }
+project(':gwt-taglist') {
+    apply plugin: 'gwt-base'
+    gwt { gwtVersion="$gwtVer" }
+
+    dependencies {
+ 	compile "com.google.guava:guava-gwt:$guavaVer"
+   }
+}
+
 
