@@ -443,6 +443,8 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
         ((DiskResourceColumnModel)cm).addManageSharingEventHandler(presenter);
         ((DiskResourceColumnModel)cm).addManageMetadataEventHandler(presenter);
         ((DiskResourceColumnModel)cm).addShareByDataLinkEventHandler(presenter);
+        ((DiskResourceColumnModel)cm).addManageFavoritesEventHandler(presenter);
+        ((DiskResourceColumnModel)cm).addManageCommentsEventHandler(presenter);
         toolbar.init(presenter, this);
         initDragAndDrop();
     }
