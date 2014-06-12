@@ -11,8 +11,11 @@ import org.iplantc.de.client.models.diskResources.PermissionValue;
 import org.iplantc.de.client.models.search.DiskResourceQueryTemplate;
 import org.iplantc.de.client.util.CommonModelUtils;
 import org.iplantc.de.client.util.DiskResourceUtil;
-import org.iplantc.de.commons.client.tags.CustomIplantTagResources;
-import org.iplantc.de.commons.client.tags.IplantTagList;
+import org.iplantc.de.commons.client.tags.models.IpalntTagAutoBeanFactory;
+import org.iplantc.de.commons.client.tags.models.IplantTag;
+import org.iplantc.de.commons.client.tags.presenter.IplantTagListPresenter;
+import org.iplantc.de.commons.client.tags.resources.CustomIplantTagResources;
+import org.iplantc.de.commons.client.tags.views.IplantTagListView;
 import org.iplantc.de.commons.client.widgets.IPlantAnchor;
 import org.iplantc.de.diskResource.client.events.DiskResourceSelectionChangedEvent;
 import org.iplantc.de.diskResource.client.events.FolderSelectionEvent;
@@ -57,6 +60,8 @@ import com.google.gwt.user.client.ui.IsWidget;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.inject.Inject;
+import com.google.web.bindery.autobean.shared.AutoBean;
+import com.google.web.bindery.autobean.shared.AutoBeanCodex;
 
 import com.sencha.gxt.core.client.IdentityValueProvider;
 import com.sencha.gxt.core.client.Style.SelectionMode;
@@ -100,10 +105,6 @@ import com.sencha.gxt.widget.core.client.toolbar.ToolBar;
 import com.sencha.gxt.widget.core.client.tree.Tree;
 import com.sencha.gxt.widget.core.client.tree.Tree.TreeNode;
 import com.sencha.gxt.widget.core.client.tree.TreeView;
-
-import com.virilis_software.gwt.taglist.client.TagCreationCodex;
-import com.virilis_software.gwt.taglist.client.tag.StringTag;
-import com.virilis_software.gwt.taglist.client.tag.Tag;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -168,7 +169,6 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
         }
     }
 
-
     private final class LiveGridViewUpdateHandlerImpl implements LiveGridViewUpdateHandler {
         @Override
         public void onUpdate(LiveGridViewUpdateEvent event) {
@@ -187,7 +187,8 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
     }
 
     @UiTemplate("DiskResourceView.ui.xml")
-    interface DiskResourceViewUiBinder extends UiBinder<Widget, DiskResourceViewImpl> { }
+    interface DiskResourceViewUiBinder extends UiBinder<Widget, DiskResourceViewImpl> {
+    }
 
     private static DiskResourceViewUiBinder BINDER = GWT.create(DiskResourceViewUiBinder.class);
 
@@ -259,11 +260,8 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
     private final DiskResourceAutoBeanFactory drFactory;
 
     @Inject
-    public DiskResourceViewImpl(final Tree<Folder, Folder> tree,
-                                final DiskResourceViewToolbar viewToolbar,
-                                final DiskResourceAutoBeanFactory factory,
-                                final UserInfo userInfo,
-                                final IplantDisplayStrings displayStrings) {
+    public DiskResourceViewImpl(final Tree<Folder, Folder> tree, final DiskResourceViewToolbar viewToolbar, final DiskResourceAutoBeanFactory factory, final UserInfo userInfo,
+            final IplantDisplayStrings displayStrings) {
         this.tree = tree;
         this.toolbar = viewToolbar;
         this.userInfo = userInfo;
@@ -319,7 +317,7 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
 
     @Override
     public void onSelection(SelectionEvent<Folder> event) {
-        if(event.getSelectedItem() == null){
+        if (event.getSelectedItem() == null) {
             return;
         }
         // QUESTION CORE-5300 Why do we have this 'isAttached' check?
@@ -337,7 +335,7 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
                 public void execute() {
                     if (selectedItem instanceof DiskResourceQueryTemplate) {
                         pathField.clear();
-                    } else if(!selectedItem.getPath().equals(pathField.getCurrentValue())){
+                    } else if (!selectedItem.getPath().equals(pathField.getCurrentValue())) {
                         pathField.setValue(selectedItem.getPath());
                     }
                 }
@@ -395,7 +393,6 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
         westPanel.getHeader().removeTool(westPanel.getHeader().getTool(0));
         westPanel.getHeader().addTool(tool);
     }
-
 
     @UiFactory
     ListStore<DiskResource> createListStore() {
@@ -877,7 +874,7 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
             }
 
         }
-       
+
         CustomIplantTagResources r = com.google.gwt.core.shared.GWT.create(CustomIplantTagResources.class);
         detailsPanel.add(createSample("", r, true));
     }
@@ -909,39 +906,37 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
         };
     }
 
-    private IplantTagList<StringTag> createTagList(CustomIplantTagResources resources, boolean editable, Command onFocusCmd, Command onBlurCmd) {
-        List<StringTag> items = new ArrayList<StringTag>();
-        items.add(new StringTag("Tag 1", "Tag 1"));
-        items.add(new StringTag("Tag 2", "Tag 2"));
-        items.add(new StringTag("Bigger Tag", "Bigger Tag"));
-        items.add(new StringTag("This Tag is even bigger", "This Tag is even bigger"));
-        items.add(new StringTag("This Tag is even bigger bigger", "This Tag is even bigger bigger"));
-        items.add(new StringTag("This Tag is even bigger bigger bigger", "This Tag is even bigger bigger bigger"));
-        items.add(new StringTag("Bigger Tag2", "Bigger Tag"));
-        items.add(new StringTag("Bigger Tag3", "Bigger Tag"));
-        items.add(new StringTag("Bigger Tag4", "Bigger Tag"));
-        items.add(new StringTag("Bigger Tag5", "Bigger Tag"));
-        items.add(new StringTag("Bigger Tag6", "Bigger Tag"));
-        items.add(new StringTag("Bigger Tag7", "Bigger Tag"));
+    private IplantTagListView createTagList(CustomIplantTagResources resources, boolean editable, Command onFocusCmd, Command onBlurCmd) {
+        List<IplantTag> items = new ArrayList<IplantTag>();
 
-        IplantTagList<StringTag> tagList;
+        IpalntTagAutoBeanFactory factory = GWT.create(IpalntTagAutoBeanFactory.class);
+
+        for (int i = 0; i < 10; i++) {
+            AutoBean<IplantTag> tagBean = AutoBeanCodex.decode(factory, IplantTag.class, "{}");
+            IplantTag tag = tagBean.as();
+            tag.setId(i + "");
+            if (i % 2 == 0) {
+                tag.setValue("foo");
+            } else {
+                tag.setValue("bar fooed");
+            }
+            tag.setDescription("this is a big desription");
+            items.add(tag);
+
+        }
+
+        IplantTagListPresenter tagList;
         if (resources == null) {
-            tagList = new IplantTagList<StringTag>();
+            tagList = new IplantTagListPresenter();
         } else {
-            tagList = new IplantTagList<StringTag>(resources);
+            tagList = new IplantTagListPresenter(resources);
         }
         tagList.setEditable(editable);
-        tagList.setTagCreationCodex(new TagCreationCodex<StringTag>() {
-            @Override
-            public StringTag createTag(Tag<?> tag) {
-                return new StringTag((String)tag.getValue());
-            }
-        });
         tagList.setOnFocusCmd(onFocusCmd);
         tagList.setOnBlurCmd(onBlurCmd);
         tagList.addTags(items);
 
-        return tagList;
+        return tagList.getTagListView();
     }
 
     private void addFolderDetails(DiskResourceInfo info) {
@@ -1142,7 +1137,6 @@ public class DiskResourceViewImpl extends Composite implements DiskResourceView,
             dr.setDiskResourceInfo(info);
             updateDetails(path, info);
         }
-
 
     }
 
