@@ -187,6 +187,8 @@ public interface DiskResourceView extends IsWidget, IsMaskable, IsDiskResourceRo
         void attachTag(IplantTag tag);
 
         void detachTag(IplantTag tag);
+
+        void getTagsForSelectedResource();
     }
 
     /**
@@ -337,4 +339,6 @@ public interface DiskResourceView extends IsWidget, IsMaskable, IsDiskResourceRo
     }
 
     void displayAndCacheDiskResourceInfo(String path, DiskResourceInfo info);
+
+    void updateTags(List<IplantTag> tags);
 }

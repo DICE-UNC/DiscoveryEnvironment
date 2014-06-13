@@ -19,9 +19,12 @@ import org.iplantc.de.client.models.diskResources.File;
 import org.iplantc.de.client.models.diskResources.Folder;
 import org.iplantc.de.client.models.diskResources.PermissionValue;
 import org.iplantc.de.client.models.search.DiskResourceQueryTemplate;
+import org.iplantc.de.client.models.tags.IpalntTagAutoBeanFactory;
 import org.iplantc.de.client.models.tags.IplantTag;
+import org.iplantc.de.client.models.tags.IplantTagList;
 import org.iplantc.de.client.models.viewer.InfoType;
 import org.iplantc.de.client.services.DiskResourceServiceFacade;
+import org.iplantc.de.client.services.FileSystemMetadataServiceFacade;
 import org.iplantc.de.client.services.MetadataServiceFacade;
 import org.iplantc.de.client.util.CommonModelUtils;
 import org.iplantc.de.client.util.DiskResourceUtil;
@@ -164,13 +167,14 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
     private final EventBus eventBus;
     private final IplantAnnouncer announcer;
     private MetadataServiceFacade mdataService;
+    private FileSystemMetadataServiceFacade fsmdataService;
 
     @Inject
     public DiskResourcePresenterImpl(final DiskResourceView view,
                                      final DiskResourceView.Proxy proxy,
                                      final FolderContentsRpcProxy folderRpcProxy,
                                      final DiskResourceServiceFacade diskResourceService,
-            final MetadataServiceFacade mdataService, final IplantDisplayStrings display,
+            final MetadataServiceFacade mdataService, final FileSystemMetadataServiceFacade fsmDataService, final IplantDisplayStrings display,
                                      final DiskResourceAutoBeanFactory factory,
                                      final DataLinkFactory dlFactory,
                                      final UserInfo userInfo,
@@ -189,6 +193,7 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
         this.eventBus = eventBus;
         this.announcer = announcer;
         this.mdataService = mdataService;
+        this.fsmdataService = fsmDataService;
 
         builder = new MyBuilder(this);
 
@@ -541,6 +546,32 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
     }
 
     @Override
+    public void getTagsForSelectedResource() {
+        if (getSelectedDiskResources().size() > 0) {
+            Iterator<DiskResource> it = getSelectedDiskResources().iterator();
+            if (it != null && it.hasNext()) {
+                final DiskResource next = it.next();
+                fsmdataService.getTags(next.getUUID(), new AsyncCallback<String>() {
+
+                    @Override
+                    public void onFailure(Throwable caught) {
+                        ErrorHandler.post("Unable to retrieve tags!", caught);
+
+                    }
+
+                    @Override
+                    public void onSuccess(String result) {
+                        IpalntTagAutoBeanFactory factory = GWT.create(IpalntTagAutoBeanFactory.class);
+                        AutoBean<IplantTagList> tagList = AutoBeanCodex.decode(factory, IplantTagList.class, result);
+                        view.updateTags(tagList.as().getTagList());
+
+                    }
+                });
+            }
+        }
+    }
+
+    @Override
     public void doBulkUpload() {
         eventBus.fireEvent(new RequestBulkUploadEvent(this, getSelectedUploadFolder()));
     }
@@ -552,8 +583,6 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
 
     @Override
     public void editSelectedFile() {
-
-
         checkState(getSelectedDiskResources().size() == 1, "Only one file should be selected, but there are %i", getSelectedDiskResources().size());
         final DiskResource next = getSelectedDiskResources().iterator().next();
         checkState(next instanceof File, "Selected item should be a file, but is not.");
@@ -1096,7 +1125,6 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
 
     @Override
     public void emptyTrash() {
-
         // TODO CORE-5300 Move confirmation box to view, which will call presenter
         final ConfirmMessageBox cmb = new ConfirmMessageBox(I18N.DISPLAY.emptyTrash(), I18N.DISPLAY.emptyTrashWarning());
         cmb.addHideHandler(new HideHandler() {
@@ -1247,7 +1275,7 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
             Iterator<DiskResource> it = getSelectedDiskResources().iterator();
             if (it != null && it.hasNext()) {
                 final DiskResource next = it.next();
-                mdataService.attachTags(Arrays.asList(tag.getId()), next.getUUID(), new AsyncCallback<String>() {
+                fsmdataService.attachTags(Arrays.asList(tag.getId()), next.getUUID(), new AsyncCallback<String>() {
 
                     @Override
                     public void onFailure(Throwable caught) {
@@ -1272,11 +1300,11 @@ public class DiskResourcePresenterImpl implements DiskResourceView.Presenter, Di
             Iterator<DiskResource> it = getSelectedDiskResources().iterator();
             if (it != null && it.hasNext()) {
                 final DiskResource next = it.next();
-                mdataService.detachTags(Arrays.asList(tag.getId()), next.getUUID(), new AsyncCallback<String>() {
+                fsmdataService.detachTags(Arrays.asList(tag.getId()), next.getUUID(), new AsyncCallback<String>() {
 
                     @Override
                     public void onFailure(Throwable caught) {
-                        ErrorHandler.post("Unable to tag this resource!", caught);
+                        ErrorHandler.post("Unable to remove tag on this resource!", caught);
                     }
 
                     @Override
